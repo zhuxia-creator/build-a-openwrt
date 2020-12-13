@@ -21,8 +21,8 @@ on:
         default: 'false'
       scp:
         description: 'SCP Files'
-        required: false
-        default: 'false'
+        required: true
+        default: 'true'
   push:
     branches:
       - master
@@ -84,16 +84,16 @@ jobs:
         find dl -size -1024c -exec ls -l {} \;
         find dl -size -1024c -exec rm -f {} \;
 
-    # - name: Compile the firmware
-    #   id: compile
-    #   run: |
-    #     cd openwrt
-    #     echo -e "$(nproc) thread compile"
-    #     make -j$(nproc) || make -j1 || make -j1 V=s
-    #     echo "::set-output name=status::success"
-    #     grep '^CONFIG_TARGET.*DEVICE.*=y' .config | sed -r 's/.*DEVICE_(.*)=y/\1/' > DEVICE_NAME
-    #     [ -s DEVICE_NAME ] && echo "DEVICE_NAME=_$(cat DEVICE_NAME)" >> $GITHUB_ENV
-    #     echo "FILE_DATE=_$(date +"%Y%m%d%H%M")" >> $GITHUB_ENV
+#     - name: Compile the firmware
+#       id: compile
+#       run: |
+#         cd openwrt
+#         echo -e "$(nproc) thread compile"
+#         make -j$(nproc) || make -j1 || make -j1 V=s
+#         echo "::set-output name=status::success"
+#         grep '^CONFIG_TARGET.*DEVICE.*=y' .config | sed -r 's/.*DEVICE_(.*)=y/\1/' > DEVICE_NAME
+#         [ -s DEVICE_NAME ] && echo "DEVICE_NAME=_$(cat DEVICE_NAME)" >> $GITHUB_ENV
+#         echo "FILE_DATE=_$(date +"%Y%m%d%H%M")" >> $GITHUB_ENV
 
     - name: Check space usage
       if: (!cancelled())
@@ -106,5 +106,5 @@ jobs:
         tar -cvfz rpi3-64.tar.gz `ls -A`
         echo "${{ secrets.SSH_KEY }}" > key
         chmod 400 key
-        scp -i key -o "StrictHostKeyChecking no" -P ${{ secrets.PORT }} rpi3-64.tar.gz ${{ secrets.USER }}@${{ secrets.HOST }}:~/code/
+        scp -i key -o "StrictHostKeyChecking no" -P ${{ secrets.PORT }} rpi3-64.tar.gz ${{ secrets.USERNAME }}@${{ secrets.HOST }}:~/code/
         rm key
