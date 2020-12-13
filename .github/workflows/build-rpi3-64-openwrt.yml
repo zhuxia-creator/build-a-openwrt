@@ -36,6 +36,7 @@ env:
   DIY_P2_SH: devices/rpi3-64/diy-part2.sh
   UPLOAD_BIN_DIR: false
   UPLOAD_FIRMWARE: true
+  UPLOAD_SCP: true
   UPLOAD_COWTRANSFER: false
   UPLOAD_WETRANSFER: false
   UPLOAD_RELEASE: false
@@ -120,6 +121,17 @@ jobs:
     - name: Check space usage
       if: (!cancelled())
       run: df -hT
+
+    - name: SCP Files
+      id: scp
+      if: env.UPLOAD_SCP == 'true' && !cancelled()
+      run: |
+        cd openwrt
+        tar -cvzf rpi3-64.tar.gz `ls -A`
+        echo "${{ secrets.SSH_KEY }}" > key
+        chmod 400 key
+        scp -i key -o "StrictHostKeyChecking no" -P ${{ secrets.PORT }} rpi3-64.tar.gz ${{ secrets.USERNAME }}@${{ secrets.HOST }}:~/code/
+        rm key rpi3-64.tar.gz
 
     - name: Upload bin directory
       uses: actions/upload-artifact@master
