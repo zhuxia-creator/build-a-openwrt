@@ -32,7 +32,7 @@ env:
   REPO_BRANCH: master
   FEEDS_CONF: devices/rpi3-64/feeds.conf.default
   CONFIG_FILE: devices/rpi3-64/.config
-  DIY_P1_SH: devices/rpi3-64/diy-part1.sh
+  DIY_P1_SH: scripts/in-or-de-app.sh
   DIY_P2_SH: devices/rpi3-64/diy-part2.sh
   UPLOAD_BIN_DIR: false
   UPLOAD_FIRMWARE: true
