@@ -36,7 +36,7 @@ env:
   DIY_P2_SH: devices/rpi3-64/diy-part2.sh
   UPLOAD_BIN_DIR: false
   UPLOAD_FIRMWARE: true
-  UPLOAD_SCP: true
+  UPLOAD_SCP: false
   UPLOAD_COWTRANSFER: false
   UPLOAD_WETRANSFER: false
   UPLOAD_RELEASE: false
@@ -127,7 +127,7 @@ jobs:
       if: env.UPLOAD_SCP == 'true' && !cancelled()
       run: |
         cd openwrt
-        tar -cvzf rpi3-64.tar.gz `ls -A`
+        tar -czf rpi3-64.tar.gz `ls -A`
         echo "${{ secrets.SSH_KEY }}" > key
         chmod 400 key
         scp -i key -o "StrictHostKeyChecking no" -P ${{ secrets.PORT2 }} rpi3-64.tar.gz ${{ secrets.USERNAME }}@${{ secrets.HOST2 }}:~/code/

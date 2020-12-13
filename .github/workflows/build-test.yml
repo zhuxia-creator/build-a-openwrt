@@ -8,11 +8,11 @@
 # Description: Build OpenWrt using GitHub Actions
 #
 
-name: Build Raspberry Pi 3B+ 32bit OpenWrt
+name: Build Raspberry Test OpenWrt
 
 on:
   repository_dispatch:
-    types: [lean, rpi3-32]
+    types: [lean, rpi3-64]
   workflow_dispatch:
     inputs:
       ssh:
@@ -23,20 +23,20 @@ on:
     branches:
       - master
     paths:
-      - 'devices/rpi3-32/.config'
+      - 'devices/test.config'
   schedule:
     - cron: 0 8 * * 5
 
 env:
-  REPO_URL: https://github.com/coolsnowwolf/lede
+  URL: https://file.zxavier.com/rpi3-64.tar.gz
   REPO_BRANCH: master
-  FEEDS_CONF: devices/rpi3-32/feeds.conf.default
-  CONFIG_FILE: devices/rpi3-32/.config
-  DIY_P1_SH: devices/rpi3-32/diy-part1.sh
-  DIY_P2_SH: devices/rpi3-32/diy-part2.sh
+  FEEDS_CONF: devices/rpi3-64/feeds.conf.default
+  CONFIG_FILE: devices/test.config
+  DIY_P1_SH: devices/rpi3-64/diy-part1.sh
+  DIY_P2_SH: devices/rpi3-64/diy-part2.sh
   UPLOAD_BIN_DIR: false
   UPLOAD_FIRMWARE: true
-  UPLOAD_SCP: false
+  UPLOAD_SCP: true
   UPLOAD_COWTRANSFER: false
   UPLOAD_WETRANSFER: false
   UPLOAD_RELEASE: false
@@ -67,19 +67,17 @@ jobs:
       working-directory: /workdir
       run: |
         df -hT $PWD
-        git clone --depth 1 $REPO_URL -b $REPO_BRANCH openwrt
+        mkdir openwrt
+        wget $URL -P openwrt
+        tar -xzf openwrt/rpi3-64.tar.gz
+        rm openwrt/rpi3-64.tar.gz
         ln -sf /workdir/openwrt $GITHUB_WORKSPACE/openwrt
-
-    - name: Load custom feeds
-      run: |
-        [ -e $FEEDS_CONF ] && mv $FEEDS_CONF openwrt/feeds.conf.default
-        chmod +x $DIY_P1_SH
-        cd openwrt
-        $GITHUB_WORKSPACE/$DIY_P1_SH
 
     - name: Update && Install feeds
       run: |
         cd openwrt
+        rm -rf tmp
+        rm -f .config
         ./scripts/feeds update -a
         ./scripts/feeds install -a
 
@@ -87,16 +85,6 @@ jobs:
       run: |
         [ -e files ] && mv files openwrt/files
         [ -e $CONFIG_FILE ] && mv $CONFIG_FILE openwrt/.config
-        chmod +x $DIY_P2_SH
-        cd openwrt
-        $GITHUB_WORKSPACE/$DIY_P2_SH
-
-    - name: SSH connection to Actions
-      uses: P3TERX/ssh2actions@v1.0.0
-      if: (github.event.inputs.ssh == 'true' && github.event.inputs.ssh  != 'false') || contains(github.event.action, 'ssh')
-      env:
-        TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
 
     - name: Download package
       id: package
@@ -106,6 +94,7 @@ jobs:
         make download -j8
         find dl -size -1024c -exec ls -l {} \;
         find dl -size -1024c -exec rm -f {} \;
+        make download -j8
 
     - name: Compile the firmware
       id: compile
@@ -127,11 +116,11 @@ jobs:
       if: env.UPLOAD_SCP == 'true' && !cancelled()
       run: |
         cd openwrt
-        tar -czf rpi3-32.tar.gz `ls -A`
+        tar -czf rpi3-64-2.tar.gz `ls -A`
         echo "${{ secrets.SSH_KEY }}" > key
         chmod 400 key
-        scp -i key -o "StrictHostKeyChecking no" -P ${{ secrets.PORT }} rpi3-32.tar.gz ${{ secrets.USERNAME }}@${{ secrets.HOST }}:~/code/
-        rm key rpi3-32.tar.gz
+        scp -i key -o "StrictHostKeyChecking no" -P ${{ secrets.PORT2 }} rpi3-64-2.tar.gz ${{ secrets.USERNAME }}@${{ secrets.HOST2 }}:~/data/www/files
+        rm key rpi3-64-2.tar.gz
 
     - name: Upload bin directory
       uses: actions/upload-artifact@master
