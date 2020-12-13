@@ -19,10 +19,6 @@ on:
         description: 'SSH connection to Actions'
         required: false
         default: 'false'
-      scp:
-        description: 'SCP Files'
-        required: true
-        default: 'true'
   push:
     branches:
       - master
@@ -30,7 +26,7 @@ on:
 env:
   REPO_URL: https://github.com/coolsnowwolf/lede
   REPO_BRANCH: master
-  FEEDS_CONF: devices/rpi3-64/feeds.conf.default
+  UPLOAD_SCP: true
   TZ: Asia/Shanghai
 
 jobs:
@@ -47,7 +43,7 @@ jobs:
       run: |
         sudo rm -rf /etc/apt/sources.list.d/* /usr/share/dotnet /usr/local/lib/android /opt/ghc
         sudo -E apt-get -qq update
-        sudo -E apt-get -qq install build-essential asciidoc binutils bzip2 gawk gettext git libncurses5-dev libz-dev patch python3.5 python2.7 unzip zlib1g-dev lib32gcc1 libc6-dev-i386 subversion flex uglifyjs git-core gcc-multilib p7zip p7zip-full msmtp libssl-dev texinfo libglib2.0-dev xmlto qemu-utils upx libelf-dev autoconf automake libtool autopoint device-tree-compiler g++-multilib antlr3 gperf wget swig
+        sudo -E apt-get -qq install git wget
         sudo -E apt-get -qq autoremove --purge
         sudo -E apt-get -qq clean
         sudo timedatectl set-timezone "$TZ"
@@ -75,14 +71,14 @@ jobs:
         TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
         TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
 
-    - name: Download package
-      id: package
-      run: |
-        cd openwrt
-        make defconfig
-        make download -j8
-        find dl -size -1024c -exec ls -l {} \;
-        find dl -size -1024c -exec rm -f {} \;
+#     - name: Download package
+#       id: package
+#       run: |
+#         cd openwrt
+#         make defconfig
+#         make download -j8
+#         find dl -size -1024c -exec ls -l {} \;
+#         find dl -size -1024c -exec rm -f {} \;
 
 #     - name: Compile the firmware
 #       id: compile
@@ -101,9 +97,10 @@ jobs:
     
     - name: SCP Files
       id: scp
-      if: (github.event.inputs.scp == 'true' && github.event.inputs.scp  != 'false') || contains(github.event.action, 'scp')
+      if: env.UPLOAD_SCP == 'true' && !cancelled()
       run: |
-        tar -cvfz rpi3-64.tar.gz `ls -A`
+        cd openwrt
+        tar -cvzf rpi3-64.tar.gz `ls -A`
         echo "${{ secrets.SSH_KEY }}" > key
         chmod 400 key
         scp -i key -o "StrictHostKeyChecking no" -P ${{ secrets.PORT }} rpi3-64.tar.gz ${{ secrets.USERNAME }}@${{ secrets.HOST }}:~/code/
