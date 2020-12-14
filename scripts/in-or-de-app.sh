@@ -32,7 +32,7 @@ rm -rf downloads
 
 # 添加smartdns
 git clone --depth=1 https://github.com/pymumu/openwrt-smartdns.git feeds/packages/net/smartdns
-git clone -b lede --depth=1 https://github.com/pymumu/luci-app-smartdns.git package/community/luci-app-smartdns
+git clone --depth=1 -b lede https://github.com/pymumu/luci-app-smartdns.git package/community/luci-app-smartdns
 
 #添加adguardhome
 git clone --depth=1 https://github.com/rufengsuixing/luci-app-adguardhome.git package/community/luci-app-adguardhome
